@@ -10,7 +10,7 @@ def main():
     questions = fileParser.parseFile(rawQuestionsList)
 
     root = userInterface.tk.Tk()
-    root.geometry("1200x500")
+    root.geometry("1400x600")
     root.title("CitiStudy")
     app = userInterface.Application(questions, master=root)
     app.mainloop()

@@ -45,17 +45,23 @@ class Application(tk.Frame):
         self.subcategoryText = tk.StringVar()
         self.promptText = tk.StringVar()
         self.answersText = tk.StringVar()
+        self.focusListBoxText = tk.StringVar()
+        self.correctListBoxText = tk.StringVar()
         self.showAnswerButton = None
         self.informationFrame = None
         self.resultButtonFrame = None
+        self.focusListBox = tk.Listbox
+        self.correctListBox = tk.Listbox
         self.pack()
         self.create_widgets()
 
     def create_widgets(self):
+        # Set up Initial Frame for Questions (Left side)
         questionsFrame = tk.Frame(self.master, bg="gray", width=500)
         questionsFrame.pack(side="left", fill="both")
         questionsFrame.pack_propagate(0)
 
+        # Set up the three Toggled frames for each major category
         cat1 = ToggledFrame(questionsFrame, text='AMERICAN GOVERNMENT', relief="raised", borderwidth=1)
         cat1.pack(fill="x", expand=0, pady=2, padx=2, anchor="n")
         for subcategory in subcategories[0]:
@@ -77,7 +83,54 @@ class Application(tk.Frame):
             subcat.pack(fill="x", expand=1, pady=2, padx=2)
             self.createQuestionsListBox(subcat.sub_frame, subcategory)
 
-        self.informationFrame = tk.Frame(self.master, bg="white", width=600)
+        # Set up focus Frame (Right Side)
+        focusFrame = tk.Frame(self.master, bg="grey", width=250)
+        focusFrame.pack(side="right", fill="both", expand="0")
+        focusFrame.pack_propagate(0)
+
+        # Create focusListBox
+        focusListBoxFrame = tk.Frame(focusFrame)
+
+        focusListBoxLabel = tk.Label(focusListBoxFrame, textvariable=self.focusListBoxText)
+        focusListBoxLabel.pack(side="top", fill="x", expand=1, pady=2, padx=2, anchor="n")
+
+        self.focusListBox = tk.Listbox(focusListBoxFrame, height=10, exportselection=True)
+        xScrollbar = tk.Scrollbar(focusListBoxFrame, orient="horizontal")
+        xScrollbar.pack(side="bottom", fill="x")
+        yScrollbar = tk.Scrollbar(focusListBoxFrame)
+        yScrollbar.pack(side="right", fill="y")
+        self.focusListBox.config(xscrollcommand=xScrollbar.set, yscrollcommand=yScrollbar.set)
+        yScrollbar.config(command=self.focusListBox.yview)
+        xScrollbar.config(command=self.focusListBox.xview)
+        self.focusListBox.bind('<<ListboxSelect>>', self.getSelection)
+        self.focusListBox.pack(side="bottom", fill="x", expand=1, pady=2, padx=2, anchor="n")
+        focusListBoxFrame.pack(fill="both")
+
+        # Populate List Box
+        for question in self.questions:
+            if question.numCorrect < 0:
+                self.focusListBox.insert("end", question.prompt)
+
+        # Create correctListBox
+        correctListBoxFrame = tk.Frame(focusFrame)
+
+        correctListBoxLabel = tk.Label(correctListBoxFrame, textvariable=self.correctListBoxText)
+        correctListBoxLabel.pack(side="top", fill="x", expand=1, pady=2, padx=2, anchor="n")
+
+        self.correctListBox = tk.Listbox(correctListBoxFrame, height=10, exportselection=True)
+        xScrollbar = tk.Scrollbar(correctListBoxFrame, orient="horizontal")
+        xScrollbar.pack(side="bottom", fill="x")
+        yScrollbar = tk.Scrollbar(correctListBoxFrame)
+        yScrollbar.pack(side="right", fill="y")
+        self.correctListBox.config(xscrollcommand=xScrollbar.set, yscrollcommand=yScrollbar.set)
+        yScrollbar.config(command=self.correctListBox.yview)
+        xScrollbar.config(command=self.focusListBox.xview)
+        self.correctListBox.bind('<<ListboxSelect>>', self.getSelection)
+        self.correctListBox.pack(side="bottom", fill="x", expand=1, pady=2, padx=2, anchor="n")
+        correctListBoxFrame.pack(fill="both")
+
+        # Set up Information Frame (Middle)
+        self.informationFrame = tk.Frame(self.master, bg="white")
         self.informationFrame.pack(side="right", fill="both", expand="1")
         self.informationFrame.pack_propagate(0)
 
@@ -85,8 +138,7 @@ class Application(tk.Frame):
         categoryLabel.grid(row=0, column=0, sticky="w", padx=3, pady=3)
         categoryLabel.propagate(0)
 
-        subcategoryLabel = tk.Label(self.informationFrame, textvariable=self.subcategoryText, font=("Arial", 15),
-                                    bg="white")
+        subcategoryLabel = tk.Label(self.informationFrame, textvariable=self.subcategoryText, font=("Arial", 15), bg="white")
         subcategoryLabel.grid(row=1, column=0, sticky="w", padx=3, pady=3)
         subcategoryLabel.propagate(0)
 
@@ -102,8 +154,8 @@ class Application(tk.Frame):
         self.resultButtonFrame = tk.Frame(self.informationFrame, bg="white")
         self.resultButtonFrame.grid(row=5, column=0, sticky="w")
 
-    def createQuestionsListBox(self, sub_frame, subcategory):
-        questionsListBoxFrame = tk.Frame(sub_frame)
+    def createQuestionsListBox(self, subFrame, subCategory):
+        questionsListBoxFrame = tk.Frame(subFrame)
         questionsListBox = tk.Listbox(questionsListBoxFrame, height=10, exportselection=True)
         xScrollbar = tk.Scrollbar(questionsListBoxFrame, orient="horizontal")
         xScrollbar.pack(side="bottom", fill="x")
@@ -111,7 +163,7 @@ class Application(tk.Frame):
         yScrollbar.pack(side="right", fill="y")
         questionsListBox.config(xscrollcommand=xScrollbar.set, yscrollcommand=yScrollbar.set)
         for question in self.questions:
-            if question.subcategory == subcategory:
+            if question.subcategory == subCategory:
                 questionsListBox.insert("end", question.prompt)
                 questionsListBox.pack(side="top", fill="x", expand=1, pady=2, padx=2)
                 questionsListBox.bind('<<ListboxSelect>>', self.getSelection)
@@ -155,5 +207,27 @@ class Application(tk.Frame):
         print(question.numCorrect)
         print("correct ", question.prompt)
 
+        if question.numCorrect > 0 and question.prompt in self.focusListBox.get(0, "end"):
+            self.focusListBox.delete(self.focusListBox.get(0, "end").index(question.prompt))
+
+        self.focusListBoxText.set("Questions to Study: {}/100".format(len(self.focusListBox.get(0, "end"))))
+
+        if question.numCorrect > 0 and question.prompt not in self.correctListBox.get(0, "end"):
+            self.correctListBox.insert("end", question.prompt)
+
+        self.correctListBoxText.set("Confident Questions: {}/100".format(len(self.correctListBox.get(0, "end"))))
+
     def incorrect(self, question):
+        question.numCorrect -= 1
+        print(question.numCorrect)
         print("incorrect", question.prompt)
+
+        if question.numCorrect < 0 and question.prompt not in self.focusListBox.get(0, "end"):
+            self.focusListBox.insert("end", question.prompt)
+
+        self.focusListBoxText.set("Questions to Study: {}/100".format(len(self.focusListBox.get(0, "end"))))
+
+        if question.numCorrect < 0 and question.prompt in self.correctListBox.get(0, "end"):
+            self.correctListBox.delete(self.correctListBox.get(0, "end").index(question.prompt))
+
+        self.correctListBoxText.set("Confident Questions: {}/100".format(len(self.correctListBox.get(0, "end"))))
