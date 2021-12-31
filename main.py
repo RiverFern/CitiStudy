@@ -2,12 +2,18 @@ from tkinter import PhotoImage
 
 import fileParser
 import userInterface
-
+import loadData
 
 def main():
     with open("questions.txt", encoding="utf-8") as rawQuestions:
         rawQuestionsList = rawQuestions.readlines()
+
+    rawQuestions.close()
+
     questions = fileParser.parseFile(rawQuestionsList)
+
+    data = loadData.readData()
+    loadData.loadData(questions, data)
 
     root = userInterface.tk.Tk()
     root.geometry("1400x600")

@@ -39,6 +39,8 @@ class ToggledFrame(tk.Frame):
 class Application(tk.Frame):
     def __init__(self, questions, master=None):
         super().__init__(master)
+        self.focusListBoxList = []
+        self.correctListBoxList = []
         self.questions = questions
         self.master = master
         self.categoryText = tk.StringVar()
@@ -47,11 +49,8 @@ class Application(tk.Frame):
         self.answersText = tk.StringVar()
         self.focusListBoxText = tk.StringVar()
         self.correctListBoxText = tk.StringVar()
-        self.showAnswerButton = None
         self.informationFrame = None
         self.resultButtonFrame = None
-        self.focusListBox = tk.Listbox
-        self.correctListBox = tk.Listbox
         self.pack()
         self.create_widgets()
 
@@ -106,10 +105,11 @@ class Application(tk.Frame):
         self.focusListBox.pack(side="bottom", fill="x", expand=1, pady=2, padx=2, anchor="n")
         focusListBoxFrame.pack(fill="both")
 
-        # Populate List Box
+        # Populate List Box from load data
         for question in self.questions:
             if question.numCorrect < 0:
                 self.focusListBox.insert("end", question.prompt)
+                self.focusListBoxList.append(question)
 
         # Create correctListBox
         correctListBoxFrame = tk.Frame(focusFrame)
@@ -129,6 +129,20 @@ class Application(tk.Frame):
         self.correctListBox.pack(side="bottom", fill="x", expand=1, pady=2, padx=2, anchor="n")
         correctListBoxFrame.pack(fill="both")
 
+        loadButton = tk.Button(focusFrame, text="Load Progress", bg="#94F27F",
+                               command=lambda: self.loadProgress())
+        loadButton.pack(side="bottom", fill="x", expand=1, pady=2, padx=2, anchor="n")
+
+        saveButton = tk.Button(focusFrame, text="Save Progress", bg="#94F27F",
+                               command=lambda: self.saveProgress())
+        saveButton.pack(side="bottom", fill="x", expand=0, pady=2, padx=2, anchor="n")
+
+        #Populate list Box from load data
+        for question in self.questions:
+            if question.numCorrect > 0:
+                self.correctListBox.insert("end", question.prompt)
+                self.correctListBoxList.append(question)
+
         # Set up Information Frame (Middle)
         self.informationFrame = tk.Frame(self.master, bg="white")
         self.informationFrame.pack(side="right", fill="both", expand="1")
@@ -138,7 +152,8 @@ class Application(tk.Frame):
         categoryLabel.grid(row=0, column=0, sticky="w", padx=3, pady=3)
         categoryLabel.propagate(0)
 
-        subcategoryLabel = tk.Label(self.informationFrame, textvariable=self.subcategoryText, font=("Arial", 15), bg="white")
+        subcategoryLabel = tk.Label(self.informationFrame, textvariable=self.subcategoryText, font=("Arial", 15),
+                                    bg="white")
         subcategoryLabel.grid(row=1, column=0, sticky="w", padx=3, pady=3)
         subcategoryLabel.propagate(0)
 
@@ -191,9 +206,9 @@ class Application(tk.Frame):
                                   command=lambda: self.correct(question))
         incorrectButton = tk.Button(self.resultButtonFrame, text="Incorrect", bg="#F76868",
                                     command=lambda: self.incorrect(question))
-        self.showAnswerButton = tk.Button(self.informationFrame, text="Show Answer",
-                                          command=lambda: self.showAnswer(question))
-        self.showAnswerButton.grid(row=3, column=0, sticky="w", padx=3, pady=3)
+        showAnswerButton = tk.Button(self.informationFrame, text="Show Answer",
+                                     command=lambda: self.showAnswer(question))
+        showAnswerButton.grid(row=3, column=0, sticky="w", padx=3, pady=3)
         correctButton.grid(row=0, column=0, sticky="w", padx=3, pady=3)
         incorrectButton.grid(row=0, column=1, sticky="w", padx=3, pady=3)
 
@@ -203,17 +218,20 @@ class Application(tk.Frame):
         self.answersText.set(answerString)
 
     def correct(self, question):
+
         question.numCorrect += 1
         print(question.numCorrect)
         print("correct ", question.prompt)
 
         if question.numCorrect > 0 and question.prompt in self.focusListBox.get(0, "end"):
             self.focusListBox.delete(self.focusListBox.get(0, "end").index(question.prompt))
+            self.focusListBoxList.remove(question)
 
         self.focusListBoxText.set("Questions to Study: {}/100".format(len(self.focusListBox.get(0, "end"))))
 
         if question.numCorrect > 0 and question.prompt not in self.correctListBox.get(0, "end"):
             self.correctListBox.insert("end", question.prompt)
+            self.correctListBoxList.append(question)
 
         self.correctListBoxText.set("Confident Questions: {}/100".format(len(self.correctListBox.get(0, "end"))))
 
@@ -224,10 +242,30 @@ class Application(tk.Frame):
 
         if question.numCorrect < 0 and question.prompt not in self.focusListBox.get(0, "end"):
             self.focusListBox.insert("end", question.prompt)
+            self.focusListBoxList.append(question)
 
         self.focusListBoxText.set("Questions to Study: {}/100".format(len(self.focusListBox.get(0, "end"))))
 
         if question.numCorrect < 0 and question.prompt in self.correctListBox.get(0, "end"):
             self.correctListBox.delete(self.correctListBox.get(0, "end").index(question.prompt))
+            self.correctListBoxList.remove(question)
 
         self.correctListBoxText.set("Confident Questions: {}/100".format(len(self.correctListBox.get(0, "end"))))
+
+    def saveProgress(self):
+        print("Save Progress")
+
+        with open("CitiStudyProgress.txt", 'w+', encoding="utf-8") as progress:
+            for question in self.focusListBoxList:
+                data = "{} @{} \n".format(question.prompt, question.numCorrect)
+                progress.write(data)
+            for question in self.correctListBoxList:
+                data = "{} @{} \n".format(question.prompt, question.numCorrect)
+                progress.write(data)
+
+        progress.close()
+
+    def loadProgress(self, focusListBox, correctListBox):
+        print("Load Progress")
+        print(correctListBox.get(0, "end"))
+        print(focusListBox.get(0, "end"))
