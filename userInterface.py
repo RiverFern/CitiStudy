@@ -55,6 +55,8 @@ class Application(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
+        self.categoryText.set("CitiStudy 2021")
+
         # Set up Initial Frame for Questions (Left side)
         questionsFrame = tk.Frame(self.master, bg="gray", width=500)
         questionsFrame.pack(side="left", fill="both")
@@ -111,6 +113,8 @@ class Application(tk.Frame):
                 self.focusListBox.insert("end", question.prompt)
                 self.focusListBoxList.append(question)
 
+        self.focusListBoxText.set("Questions to Study: {}/100".format(len(self.focusListBoxList)))
+
         # Create correctListBox
         correctListBoxFrame = tk.Frame(focusFrame)
 
@@ -137,11 +141,13 @@ class Application(tk.Frame):
                                command=lambda: self.saveProgress())
         saveButton.pack(side="bottom", fill="x", expand=0, pady=2, padx=2, anchor="n")
 
-        #Populate list Box from load data
+        # Populate correctListBox from load data
         for question in self.questions:
             if question.numCorrect > 0:
                 self.correctListBox.insert("end", question.prompt)
                 self.correctListBoxList.append(question)
+
+        self.correctListBoxText.set("Questions to Study: {}/100".format(len(self.correctListBoxList)))
 
         # Set up Information Frame (Middle)
         self.informationFrame = tk.Frame(self.master, bg="white")
@@ -227,13 +233,13 @@ class Application(tk.Frame):
             self.focusListBox.delete(self.focusListBox.get(0, "end").index(question.prompt))
             self.focusListBoxList.remove(question)
 
-        self.focusListBoxText.set("Questions to Study: {}/100".format(len(self.focusListBox.get(0, "end"))))
+        self.focusListBoxText.set("Questions to Study: {}/100".format(len(self.focusListBoxList)))
 
         if question.numCorrect > 0 and question.prompt not in self.correctListBox.get(0, "end"):
             self.correctListBox.insert("end", question.prompt)
             self.correctListBoxList.append(question)
 
-        self.correctListBoxText.set("Confident Questions: {}/100".format(len(self.correctListBox.get(0, "end"))))
+        self.correctListBoxText.set("Confident Questions: {}/100".format(len(self.correctListBoxList)))
 
     def incorrect(self, question):
         question.numCorrect -= 1
@@ -244,13 +250,13 @@ class Application(tk.Frame):
             self.focusListBox.insert("end", question.prompt)
             self.focusListBoxList.append(question)
 
-        self.focusListBoxText.set("Questions to Study: {}/100".format(len(self.focusListBox.get(0, "end"))))
+        self.focusListBoxText.set("Questions to Study: {}/100".format(len(self.focusListBoxList)))
 
         if question.numCorrect < 0 and question.prompt in self.correctListBox.get(0, "end"):
             self.correctListBox.delete(self.correctListBox.get(0, "end").index(question.prompt))
             self.correctListBoxList.remove(question)
 
-        self.correctListBoxText.set("Confident Questions: {}/100".format(len(self.correctListBox.get(0, "end"))))
+        self.correctListBoxText.set("Confident Questions: {}/100".format(len(self.correctListBoxList)))
 
     def saveProgress(self):
         print("Save Progress")
@@ -265,7 +271,5 @@ class Application(tk.Frame):
 
         progress.close()
 
-    def loadProgress(self, focusListBox, correctListBox):
+    def loadProgress(self):
         print("Load Progress")
-        print(correctListBox.get(0, "end"))
-        print(focusListBox.get(0, "end"))

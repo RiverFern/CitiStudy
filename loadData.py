@@ -8,6 +8,7 @@ def readData():
     with open("CitiStudyProgress.txt", "r", encoding="utf-8") as rawProgress:
         progress = rawProgress.readlines()
 
+
     rawProgress.close()
 
     data = []
